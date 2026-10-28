@@ -92,10 +92,12 @@ class AutoRun:
         self.boy = boy
         # 소년의 dir 은 눌린 방향키로 계산되어 키를 떼면 0 이 되므로, 자동 런은 자기 방향을 따로 가진다.
         self.dir = 1
+        self.start_time = 0
 
     def enter(self):
-        # 들어가는 순간 바라보던 방향으로 출발한다.
+        # 들어가는 순간 바라보던 방향으로 출발하고, 5초 타이머를 시작한다.
         self.dir = self.boy.face_dir
+        self.start_time = get_time()
 
     def exit(self):
         pass
@@ -111,6 +113,8 @@ class AutoRun:
             self.dir = -self.dir
         boy.face_dir = self.dir
         boy.x += self.dir * AutoRun.SPEED
+        if get_time() - self.start_time >= 5:
+            boy.time_out()
 
     def draw(self):
         boy = self.boy
@@ -148,6 +152,7 @@ class Boy:
         # IDLE, SLEEP --(방향키 누름: dir_down)--> RUN
         # RUN --(방향키 모두 뗌: dir_up)--> IDLE
         # IDLE --(a 키 누름: a_down)--> AUTO_RUN
+        # AUTO_RUN --(5초 경과: time_out)--> IDLE
         # 상태가 바뀔 때마다 Machine 이 나가는 상태 객체의 exit 와 들어가는 상태 객체의 enter 를 불러 준다.
         # ignore_invalid_triggers: IDLE 에서 SPACE 처럼 현재 상태에 없는 이벤트는 무시한다.
         self.machine = Machine(
@@ -160,6 +165,7 @@ class Boy:
                 {'trigger': 'dir_down', 'source': ['IDLE', 'SLEEP'], 'dest': 'RUN'},
                 {'trigger': 'dir_up', 'source': 'RUN', 'dest': 'IDLE'},
                 {'trigger': 'a_down', 'source': 'IDLE', 'dest': 'AUTO_RUN'},
+                {'trigger': 'time_out', 'source': 'AUTO_RUN', 'dest': 'IDLE'},
             ],
             initial='IDLE',
             auto_transitions=False,
