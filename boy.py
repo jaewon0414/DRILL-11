@@ -86,6 +86,7 @@ class Run:
 # 자동 무적 런: 키를 누르지 않아도 계속 달린다.
 class AutoRun:
     SPEED = 10  # 프레임당 이동 픽셀. RUN(5)의 두 배
+    SCALE = 2   # 그림 확대 배율. 100x100 칸을 200x200 으로 그린다
 
     def __init__(self, boy):
         self.boy = boy
@@ -103,7 +104,9 @@ class AutoRun:
         boy = self.boy
         boy.frame = (boy.frame + 1) % 8
         # 바깥쪽으로 가다가 경계에 닿으면 돌아선다. 위치는 고치지 않아서 끝에서 시작해도 순간 이동이 없다.
-        left, right = 50, get_canvas_width() - 50
+        # 경계 여백은 커진 그림 칸의 절반이다.
+        margin = 50 * AutoRun.SCALE
+        left, right = margin, get_canvas_width() - margin
         if (self.dir == 1 and boy.x >= right) or (self.dir == -1 and boy.x <= left):
             self.dir = -self.dir
         boy.face_dir = self.dir
@@ -111,10 +114,13 @@ class AutoRun:
 
     def draw(self):
         boy = self.boy
+        size = 100 * AutoRun.SCALE
+        # 그림은 중심 기준으로 커지므로 발끝(칸 중심 아래 37)이 땅에 남도록 그리는 y 만 올린다.
+        y = boy.y + 37 * (AutoRun.SCALE - 1)
         if boy.face_dir == 1:
-            boy.image.clip_draw(boy.frame * 100, 100, 100, 100, boy.x, boy.y)
+            boy.image.clip_draw(boy.frame * 100, 100, 100, 100, boy.x, y, size, size)
         else:
-            boy.image.clip_draw(boy.frame * 100, 0, 100, 100, boy.x, boy.y)
+            boy.image.clip_draw(boy.frame * 100, 0, 100, 100, boy.x, y, size, size)
 
 
 class Boy:
