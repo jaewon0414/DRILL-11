@@ -100,9 +100,12 @@ class AutoRun:
     def do(self):
         boy = self.boy
         boy.frame = (boy.frame + 1) % 8
+        # 바깥쪽으로 가다가 경계에 닿으면 돌아선다. 위치는 고치지 않아서 끝에서 시작해도 순간 이동이 없다.
+        left, right = 50, get_canvas_width() - 50
+        if (self.dir == 1 and boy.x >= right) or (self.dir == -1 and boy.x <= left):
+            self.dir = -self.dir
         boy.face_dir = self.dir
         boy.x += self.dir * 5
-        boy.x = clamp(50, boy.x, get_canvas_width() - 50)
 
     def draw(self):
         boy = self.boy
