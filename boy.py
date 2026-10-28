@@ -20,7 +20,7 @@ class Boy:
 
         # IDLE --(5초 경과: time_out)--> SLEEP
         # SLEEP --(SPACE 누름: space_down)--> IDLE
-        # IDLE --(방향키 누름: dir_down)--> RUN
+        # IDLE, SLEEP --(방향키 누름: dir_down)--> RUN
         # RUN --(방향키 모두 뗌: dir_up)--> IDLE
         # ignore_invalid_triggers: IDLE 에서 SPACE 처럼 현재 상태에 없는 이벤트는 무시한다.
         self.machine = Machine(
@@ -29,7 +29,7 @@ class Boy:
             transitions=[
                 {'trigger': 'time_out', 'source': 'IDLE', 'dest': 'SLEEP'},
                 {'trigger': 'space_down', 'source': 'SLEEP', 'dest': 'IDLE'},
-                {'trigger': 'dir_down', 'source': 'IDLE', 'dest': 'RUN'},
+                {'trigger': 'dir_down', 'source': ['IDLE', 'SLEEP'], 'dest': 'RUN'},
                 {'trigger': 'dir_up', 'source': 'RUN', 'dest': 'IDLE'},
             ],
             initial='IDLE',
