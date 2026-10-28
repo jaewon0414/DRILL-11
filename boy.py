@@ -1,4 +1,4 @@
-from pico2d import load_image
+from pico2d import load_image, get_time
 from transitions import Machine
 
 
@@ -9,17 +9,30 @@ class Boy:
         self.face_dir = 1
         self.image = load_image('animation_sheet.png')
 
-        # 지금은 IDLE 상태 하나만 갖는다.
-        # Machine 이 self.state 에 현재 상태 이름('IDLE')을 넣어 준다.
+        # IDLE 에 들어온 시각. 처음 시작 상태는 on_enter_IDLE 이 불리지 않으므로 여기서 직접 기록한다.
+        self.idle_start_time = get_time()
+
+        # IDLE --(5초 경과: time_out)--> SLEEP
         self.machine = Machine(
             model=self,
-            states=['IDLE'],
+            states=['IDLE', 'SLEEP'],
+            transitions=[
+                {'trigger': 'time_out', 'source': 'IDLE', 'dest': 'SLEEP'},
+            ],
             initial='IDLE',
             auto_transitions=False,
         )
 
+    # Machine 이 IDLE 상태로 들어갈 때마다 자동으로 불러 준다(entry action).
+    def on_enter_IDLE(self):
+        self.idle_start_time = get_time()
+
     def update(self):
         if self.state == 'IDLE':
+            self.frame = (self.frame + 1) % 8
+            if get_time() - self.idle_start_time > 5:
+                self.time_out()
+        elif self.state == 'SLEEP':
             self.frame = (self.frame + 1) % 8
 
     def draw(self):
@@ -29,3 +42,11 @@ class Boy:
                 self.image.clip_draw(self.frame * 100, 300, 100, 100, self.x, self.y)
             else:
                 self.image.clip_draw(self.frame * 100, 200, 100, 100, self.x, self.y)
+        elif self.state == 'SLEEP':
+            # IDLE 그림을 90도 돌려 눕힌다. 눕히면 몸이 떠 보이므로 땅 쪽으로 25 내려서 그린다.
+            if self.face_dir == 1:
+                self.image.clip_composite_draw(self.frame * 100, 300, 100, 100,
+                                               3.141592 / 2, '', self.x, self.y - 25, 100, 100)
+            else:
+                self.image.clip_composite_draw(self.frame * 100, 200, 100, 100,
+                                               -3.141592 / 2, '', self.x, self.y - 25, 100, 100)
