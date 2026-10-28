@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time
+from pico2d import load_image, get_time, get_canvas_width, clamp
 from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT
 from transitions import Machine
 
@@ -69,6 +69,8 @@ class Boy:
             self.frame = (self.frame + 1) % 8
             self.face_dir = self.dir
             self.x += self.dir * 5
+            # 그림 한 칸(100x100)의 절반인 50 만큼 안쪽까지만 가면 서 있든 달리든 누워 있든 화면 안에 다 보인다.
+            self.x = clamp(50, self.x, get_canvas_width() - 50)
 
     def draw(self):
         if self.state == 'IDLE':
