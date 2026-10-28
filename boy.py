@@ -149,7 +149,7 @@ class Boy:
 
         # IDLE --(5초 경과: time_out)--> SLEEP
         # SLEEP --(SPACE 누름: space_down)--> IDLE
-        # IDLE, SLEEP --(방향키 누름: dir_down)--> RUN
+        # IDLE, SLEEP, AUTO_RUN --(방향키 누름: dir_down)--> RUN
         # RUN --(방향키 모두 뗌: dir_up)--> IDLE
         # IDLE --(a 키 누름: a_down)--> AUTO_RUN
         # AUTO_RUN --(5초 경과: time_out)--> IDLE
@@ -162,7 +162,7 @@ class Boy:
             transitions=[
                 {'trigger': 'time_out', 'source': 'IDLE', 'dest': 'SLEEP'},
                 {'trigger': 'space_down', 'source': 'SLEEP', 'dest': 'IDLE'},
-                {'trigger': 'dir_down', 'source': ['IDLE', 'SLEEP'], 'dest': 'RUN'},
+                {'trigger': 'dir_down', 'source': ['IDLE', 'SLEEP', 'AUTO_RUN'], 'dest': 'RUN'},
                 {'trigger': 'dir_up', 'source': 'RUN', 'dest': 'IDLE'},
                 {'trigger': 'a_down', 'source': 'IDLE', 'dest': 'AUTO_RUN'},
                 {'trigger': 'time_out', 'source': 'AUTO_RUN', 'dest': 'IDLE'},
