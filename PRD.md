@@ -28,7 +28,7 @@ Drill #11은 LEC12와 LEC13 실습에서 만든 상태 머신 위에 새 상태�
 
 언어는 Python 3.14이고 라이브러리는 pico2d 1.5.1과 transitions 0.9.3을 쓴다. 라이브러리 버전은 `requirements.txt`에 적어 두어 `pip install -r requirements.txt` 명령으로 한 번에 설치할 수 있게 한다. 이 PC에서는 pico2d가 Python 3.14에만 설치되어 있어 다른 버전으로 실행하면 모듈을 찾지 못한다.
 
-소스는 게임 루프를 담은 `main.py`, 소년 클래스를 담은 `boy.py`, 잔디 클래스를 담은 `grass.py` 세 파일로 나눈다. 이미지는 802×402 크기의 `animation_sheet.png`와 802×62 크기의 `grass.png`를 저장소 폴더에 함께 둔다. 12단계에서 만드는 상태 다이어그램 그림 `state_diagram.png`도 같은 폴더에 둔다. 캔버스 크기는 pico2d의 기본값인 800×600이다.
+소스는 게임 루프를 담은 `main.py`, 소년 클래스를 담은 `boy.py`, 잔디 클래스를 담은 `grass.py` 세 파일로 나눈다. 이미지는 802×402 크기의 `animation_sheet.png`와 802×62 크기의 `grass.png`를 저장소 폴더에 함께 둔다. 12단계에서 만드는 상태 다이어그램 그림 `상태 다이어그램.png`도 같은 폴더에 둔다. 캔버스 크기는 pico2d의 기본값인 800×600이다.
 
 실행은 저장소 폴더에서 `py -3.14 main.py` 명령으로 한다. 이미지를 상대 경로로 읽기 때문에 다른 폴더에서 실행하면 이미지를 찾지 못한다.
 
@@ -43,6 +43,10 @@ Drill #11은 LEC12와 LEC13 실습에서 만든 상태 머신 위에 새 상태�
 상태를 바꾸는 이벤트는 다섯 가지다. `time_out`은 IDLE이나 AUTO_RUN으로 5초가 지났을 때, `space_down`은 SPACE 키를 눌렀을 때, `dir_down`은 좌우 방향키 중 하나라도 눌려 있게 되었을 때, `dir_up`은 좌우 방향키가 모두 떼어졌을 때, `a_down`은 a 키를 눌렀을 때 발생한다.
 
 완성된 상태 다이어그램은 다음과 같다. 시작 상태는 IDLE이다. IDLE에서 `time_out`이 오면 SLEEP으로, `dir_down`이 오면 RUN으로, `a_down`이 오면 AUTO_RUN으로 간다. SLEEP에서 `space_down`이 오면 IDLE로, `dir_down`이 오면 RUN으로 간다. RUN에서 `dir_up`이 오면 IDLE로 간다. AUTO_RUN에서 `time_out`이 오면 IDLE로, `dir_down`이 오면 RUN으로 간다. 그 밖의 조합, 예를 들어 IDLE에서 SPACE 키를 누르거나 RUN에서 a 키를 누르는 경우에는 상태를 바꾸지 않고 이벤트를 무시한다. 이 다이어그램은 12단계에서 그림 파일로도 그린다.
+
+그림으로 나타낸 최종 상태 다이어그램은 다음과 같다. 빨간색으로 그린 AUTO_RUN 상태와 화살표 세 개가 이번 과제에서 더한 부분이다.
+
+![상태 다이어그램](상태%20다이어그램.png)
 
 키 입력은 `main.py`의 `handle_events`가 받지만 상태는 소년이 가지고 있다. 그래서 창 닫기와 ESC 키를 뺀 나머지 입력은 소년의 `handle_event` 메서드로 넘기고, 소년이 그 입력을 직접 이벤트로 바꾼다.
 
@@ -210,7 +214,7 @@ AUTO_RUN으로 오른쪽으로 달리는 중에 왼쪽 방향키를 눌러, 원�
 
 채점 기준에 따라 최종 상태 다이어그램을 그림 파일로 그려 저장소에 넣는다.
 
-파일 이름은 `state_diagram.png`이고 저장소 최상위 폴더에 둔다. 그림에는 IDLE, SLEEP, RUN, AUTO_RUN 네 상태를 상자로 그리고, 시작 표시에서 IDLE로 들어가는 화살표를 그린다. 상태 사이의 전환 화살표는 여덟 개이며 화살표마다 이벤트를 적는다. IDLE에서 SLEEP으로 가는 5초 경과, SLEEP에서 IDLE로 가는 SPACE 키, IDLE과 SLEEP과 AUTO_RUN에서 각각 RUN으로 가는 방향키 누름, RUN에서 IDLE로 가는 방향키 모두 뗌, IDLE에서 AUTO_RUN으로 가는 a 키, AUTO_RUN에서 IDLE로 가는 5초 경과다. 이벤트는 한글로 쓰고 괄호 안에 코드의 이벤트 이름을 함께 적어, 그림과 코드를 맞춰 볼 수 있게 한다. 과제에서 새로 더한 AUTO_RUN 상태와 그 화살표는 다른 색으로 그려 한눈에 구분되게 한다.
+파일 이름은 `상태 다이어그램.png`이고 저장소 최상위 폴더에 둔다. 그림에는 IDLE, SLEEP, RUN, AUTO_RUN 네 상태를 타원으로 그리고, 시작 표시에서 IDLE로 들어가는 화살표를 그린다. 상태 사이의 전환 화살표는 여덟 개이며 화살표마다 이벤트를 적는다. IDLE에서 SLEEP으로 가는 5초 경과, SLEEP에서 IDLE로 가는 SPACE 키, IDLE과 SLEEP과 AUTO_RUN에서 각각 RUN으로 가는 방향키 누름, RUN에서 IDLE로 가는 방향키 모두 뗌, IDLE에서 AUTO_RUN으로 가는 a 키, AUTO_RUN에서 IDLE로 가는 5초 경과다. 이벤트는 한글로 쓰고 괄호 안에 코드의 이벤트 이름을 함께 적어, 그림과 코드를 맞춰 볼 수 있게 한다. 과제에서 새로 더한 AUTO_RUN 상태와 그 화살표는 다른 색으로 그려 한눈에 구분되게 한다.
 
 그림은 이 문서의 상태 머신 설계 절에도 넣어서, PRD를 읽을 때 바로 볼 수 있게 한다.
 
