@@ -85,6 +85,8 @@ class Run:
 
 # 자동 무적 런: 키를 누르지 않아도 계속 달린다.
 class AutoRun:
+    SPEED = 10  # 프레임당 이동 픽셀. RUN(5)의 두 배
+
     def __init__(self, boy):
         self.boy = boy
         # 소년의 dir 은 눌린 방향키로 계산되어 키를 떼면 0 이 되므로, 자동 런은 자기 방향을 따로 가진다.
@@ -105,7 +107,7 @@ class AutoRun:
         if (self.dir == 1 and boy.x >= right) or (self.dir == -1 and boy.x <= left):
             self.dir = -self.dir
         boy.face_dir = self.dir
-        boy.x += self.dir * 5
+        boy.x += self.dir * AutoRun.SPEED
 
     def draw(self):
         boy = self.boy
