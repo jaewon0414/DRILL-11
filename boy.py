@@ -3,6 +3,86 @@ from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT
 from transitions import Machine
 
 
+# 상태 클래스: enter 는 들어갈 때, exit 는 나갈 때 한 번, do 는 머무는 동안 매 프레임, draw 는 그리기
+class Idle:
+    def __init__(self, boy):
+        self.boy = boy
+        self.start_time = 0
+
+    def enter(self):
+        # IDLE 에 들어올 때마다 5초 타이머를 다시 시작한다.
+        self.start_time = get_time()
+
+    def exit(self):
+        pass
+
+    def do(self):
+        boy = self.boy
+        boy.frame = (boy.frame + 1) % 8
+        if get_time() - self.start_time > 5:
+            boy.time_out()
+
+    def draw(self):
+        boy = self.boy
+        # animation_sheet.png 의 IDLE 줄: 오른쪽을 볼 때 bottom 300, 왼쪽을 볼 때 bottom 200
+        if boy.face_dir == 1:
+            boy.image.clip_draw(boy.frame * 100, 300, 100, 100, boy.x, boy.y)
+        else:
+            boy.image.clip_draw(boy.frame * 100, 200, 100, 100, boy.x, boy.y)
+
+
+class Sleep:
+    def __init__(self, boy):
+        self.boy = boy
+
+    def enter(self):
+        pass
+
+    def exit(self):
+        pass
+
+    def do(self):
+        boy = self.boy
+        boy.frame = (boy.frame + 1) % 8
+
+    def draw(self):
+        boy = self.boy
+        # IDLE 그림을 90도 돌려 눕힌다. 눕히면 몸이 떠 보이므로 땅 쪽으로 25 내려서 그린다.
+        if boy.face_dir == 1:
+            boy.image.clip_composite_draw(boy.frame * 100, 300, 100, 100,
+                                          3.141592 / 2, '', boy.x, boy.y - 25, 100, 100)
+        else:
+            boy.image.clip_composite_draw(boy.frame * 100, 200, 100, 100,
+                                          -3.141592 / 2, '', boy.x, boy.y - 25, 100, 100)
+
+
+class Run:
+    def __init__(self, boy):
+        self.boy = boy
+
+    def enter(self):
+        pass
+
+    def exit(self):
+        pass
+
+    def do(self):
+        boy = self.boy
+        boy.frame = (boy.frame + 1) % 8
+        boy.face_dir = boy.dir
+        boy.x += boy.dir * 5
+        # 그림 한 칸(100x100)의 절반인 50 만큼 안쪽까지만 가면 서 있든 달리든 누워 있든 화면 안에 다 보인다.
+        boy.x = clamp(50, boy.x, get_canvas_width() - 50)
+
+    def draw(self):
+        boy = self.boy
+        # animation_sheet.png 의 RUN 줄: 오른쪽으로 달릴 때 bottom 100, 왼쪽으로 달릴 때 bottom 0
+        if boy.face_dir == 1:
+            boy.image.clip_draw(boy.frame * 100, 100, 100, 100, boy.x, boy.y)
+        else:
+            boy.image.clip_draw(boy.frame * 100, 0, 100, 100, boy.x, boy.y)
+
+
 class Boy:
     def __init__(self):
         self.x, self.y = 400, 90
@@ -15,17 +95,23 @@ class Boy:
         self.right_pressed = False
         self.dir = 0
 
-        # IDLE 에 들어온 시각. 처음 시작 상태는 on_enter_IDLE 이 불리지 않으므로 여기서 직접 기록한다.
-        self.idle_start_time = get_time()
+        # 상태 이름 -> 그 상태를 맡는 상태 객체
+        self.state_objects = {
+            'IDLE': Idle(self),
+            'SLEEP': Sleep(self),
+            'RUN': Run(self),
+        }
 
         # IDLE --(5초 경과: time_out)--> SLEEP
         # SLEEP --(SPACE 누름: space_down)--> IDLE
         # IDLE, SLEEP --(방향키 누름: dir_down)--> RUN
         # RUN --(방향키 모두 뗌: dir_up)--> IDLE
+        # 상태가 바뀔 때마다 Machine 이 나가는 상태 객체의 exit 와 들어가는 상태 객체의 enter 를 불러 준다.
         # ignore_invalid_triggers: IDLE 에서 SPACE 처럼 현재 상태에 없는 이벤트는 무시한다.
         self.machine = Machine(
             model=self,
-            states=['IDLE', 'SLEEP', 'RUN'],
+            states=[{'name': name, 'on_enter': obj.enter, 'on_exit': obj.exit}
+                    for name, obj in self.state_objects.items()],
             transitions=[
                 {'trigger': 'time_out', 'source': 'IDLE', 'dest': 'SLEEP'},
                 {'trigger': 'space_down', 'source': 'SLEEP', 'dest': 'IDLE'},
@@ -37,9 +123,8 @@ class Boy:
             ignore_invalid_triggers=True,
         )
 
-    # Machine 이 IDLE 상태로 들어갈 때마다 자동으로 불러 준다(entry action).
-    def on_enter_IDLE(self):
-        self.idle_start_time = get_time()
+        # 처음 시작 상태로 놓일 때는 Machine 이 enter 를 부르지 않으므로 직접 부른다.
+        self.state_objects['IDLE'].enter()
 
     def handle_event(self, event):
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
@@ -59,37 +144,7 @@ class Boy:
                 self.dir_up()
 
     def update(self):
-        if self.state == 'IDLE':
-            self.frame = (self.frame + 1) % 8
-            if get_time() - self.idle_start_time > 5:
-                self.time_out()
-        elif self.state == 'SLEEP':
-            self.frame = (self.frame + 1) % 8
-        elif self.state == 'RUN':
-            self.frame = (self.frame + 1) % 8
-            self.face_dir = self.dir
-            self.x += self.dir * 5
-            # 그림 한 칸(100x100)의 절반인 50 만큼 안쪽까지만 가면 서 있든 달리든 누워 있든 화면 안에 다 보인다.
-            self.x = clamp(50, self.x, get_canvas_width() - 50)
+        self.state_objects[self.state].do()
 
     def draw(self):
-        if self.state == 'IDLE':
-            # animation_sheet.png 의 IDLE 줄: 오른쪽을 볼 때 bottom 300, 왼쪽을 볼 때 bottom 200
-            if self.face_dir == 1:
-                self.image.clip_draw(self.frame * 100, 300, 100, 100, self.x, self.y)
-            else:
-                self.image.clip_draw(self.frame * 100, 200, 100, 100, self.x, self.y)
-        elif self.state == 'SLEEP':
-            # IDLE 그림을 90도 돌려 눕힌다. 눕히면 몸이 떠 보이므로 땅 쪽으로 25 내려서 그린다.
-            if self.face_dir == 1:
-                self.image.clip_composite_draw(self.frame * 100, 300, 100, 100,
-                                               3.141592 / 2, '', self.x, self.y - 25, 100, 100)
-            else:
-                self.image.clip_composite_draw(self.frame * 100, 200, 100, 100,
-                                               -3.141592 / 2, '', self.x, self.y - 25, 100, 100)
-        elif self.state == 'RUN':
-            # animation_sheet.png 의 RUN 줄: 오른쪽으로 달릴 때 bottom 100, 왼쪽으로 달릴 때 bottom 0
-            if self.face_dir == 1:
-                self.image.clip_draw(self.frame * 100, 100, 100, 100, self.x, self.y)
-            else:
-                self.image.clip_draw(self.frame * 100, 0, 100, 100, self.x, self.y)
+        self.state_objects[self.state].draw()
