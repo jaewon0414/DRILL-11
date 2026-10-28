@@ -1,4 +1,4 @@
-from pico2d import load_image, get_time
+from pico2d import load_image, get_time, SDL_KEYDOWN, SDLK_SPACE
 from transitions import Machine
 
 
@@ -13,19 +13,27 @@ class Boy:
         self.idle_start_time = get_time()
 
         # IDLE --(5초 경과: time_out)--> SLEEP
+        # SLEEP --(SPACE 누름: space_down)--> IDLE
+        # ignore_invalid_triggers: IDLE 에서 SPACE 처럼 현재 상태에 없는 이벤트는 무시한다.
         self.machine = Machine(
             model=self,
             states=['IDLE', 'SLEEP'],
             transitions=[
                 {'trigger': 'time_out', 'source': 'IDLE', 'dest': 'SLEEP'},
+                {'trigger': 'space_down', 'source': 'SLEEP', 'dest': 'IDLE'},
             ],
             initial='IDLE',
             auto_transitions=False,
+            ignore_invalid_triggers=True,
         )
 
     # Machine 이 IDLE 상태로 들어갈 때마다 자동으로 불러 준다(entry action).
     def on_enter_IDLE(self):
         self.idle_start_time = get_time()
+
+    def handle_event(self, event):
+        if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
+            self.space_down()
 
     def update(self):
         if self.state == 'IDLE':
