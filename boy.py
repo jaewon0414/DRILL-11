@@ -1,5 +1,5 @@
 from pico2d import load_image, get_time, get_canvas_width, clamp
-from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT
+from pico2d import SDL_KEYDOWN, SDL_KEYUP, SDLK_SPACE, SDLK_LEFT, SDLK_RIGHT, SDLK_a
 from transitions import Machine
 
 
@@ -83,6 +83,35 @@ class Run:
             boy.image.clip_draw(boy.frame * 100, 0, 100, 100, boy.x, boy.y)
 
 
+# 자동 무적 런: 키를 누르지 않아도 계속 달린다.
+class AutoRun:
+    def __init__(self, boy):
+        self.boy = boy
+        # 소년의 dir 은 눌린 방향키로 계산되어 키를 떼면 0 이 되므로, 자동 런은 자기 방향을 따로 가진다.
+        self.dir = 1
+
+    def enter(self):
+        # 들어가는 순간 바라보던 방향으로 출발한다.
+        self.dir = self.boy.face_dir
+
+    def exit(self):
+        pass
+
+    def do(self):
+        boy = self.boy
+        boy.frame = (boy.frame + 1) % 8
+        boy.face_dir = self.dir
+        boy.x += self.dir * 5
+        boy.x = clamp(50, boy.x, get_canvas_width() - 50)
+
+    def draw(self):
+        boy = self.boy
+        if boy.face_dir == 1:
+            boy.image.clip_draw(boy.frame * 100, 100, 100, 100, boy.x, boy.y)
+        else:
+            boy.image.clip_draw(boy.frame * 100, 0, 100, 100, boy.x, boy.y)
+
+
 class Boy:
     def __init__(self):
         self.x, self.y = 400, 90
@@ -100,12 +129,14 @@ class Boy:
             'IDLE': Idle(self),
             'SLEEP': Sleep(self),
             'RUN': Run(self),
+            'AUTO_RUN': AutoRun(self),
         }
 
         # IDLE --(5초 경과: time_out)--> SLEEP
         # SLEEP --(SPACE 누름: space_down)--> IDLE
         # IDLE, SLEEP --(방향키 누름: dir_down)--> RUN
         # RUN --(방향키 모두 뗌: dir_up)--> IDLE
+        # IDLE --(a 키 누름: a_down)--> AUTO_RUN
         # 상태가 바뀔 때마다 Machine 이 나가는 상태 객체의 exit 와 들어가는 상태 객체의 enter 를 불러 준다.
         # ignore_invalid_triggers: IDLE 에서 SPACE 처럼 현재 상태에 없는 이벤트는 무시한다.
         self.machine = Machine(
@@ -117,6 +148,7 @@ class Boy:
                 {'trigger': 'space_down', 'source': 'SLEEP', 'dest': 'IDLE'},
                 {'trigger': 'dir_down', 'source': ['IDLE', 'SLEEP'], 'dest': 'RUN'},
                 {'trigger': 'dir_up', 'source': 'RUN', 'dest': 'IDLE'},
+                {'trigger': 'a_down', 'source': 'IDLE', 'dest': 'AUTO_RUN'},
             ],
             initial='IDLE',
             auto_transitions=False,
@@ -129,6 +161,8 @@ class Boy:
     def handle_event(self, event):
         if event.type == SDL_KEYDOWN and event.key == SDLK_SPACE:
             self.space_down()
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_a:
+            self.a_down()
         elif event.type in (SDL_KEYDOWN, SDL_KEYUP) and event.key in (SDLK_LEFT, SDLK_RIGHT):
             pressed = event.type == SDL_KEYDOWN
             if event.key == SDLK_LEFT:
